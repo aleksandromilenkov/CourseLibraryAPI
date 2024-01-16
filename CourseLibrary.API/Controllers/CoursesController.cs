@@ -7,15 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace CourseLibrary.API.Controllers;
 
 [ApiController]
-[Route("api/author/{authorId}/courses")]
-public class CoursesController : ControllerBase
-{
+[Route("api/authors/{authorId}/courses")]
+public class CoursesController : ControllerBase {
     private readonly ICourseLibraryRepository _courseLibraryRepository;
     private readonly IMapper _mapper;
 
     public CoursesController(ICourseLibraryRepository courseLibraryRepository,
-        IMapper mapper)
-    {
+        IMapper mapper) {
         _courseLibraryRepository = courseLibraryRepository ??
             throw new ArgumentNullException(nameof(courseLibraryRepository));
         _mapper = mapper ??
@@ -23,10 +21,8 @@ public class CoursesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CourseDto>>> GetCoursesForAuthor(Guid authorId)
-    {
-        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId))
-        {
+    public async Task<ActionResult<IEnumerable<CourseDto>>> GetCoursesForAuthor(Guid authorId) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
             return NotFound();
         }
 
@@ -34,18 +30,15 @@ public class CoursesController : ControllerBase
         return Ok(_mapper.Map<IEnumerable<CourseDto>>(coursesForAuthorFromRepo));
     }
 
-    [HttpGet("{courseId}")]
-    public async Task<ActionResult<CourseDto>> GetCourseForAuthor(Guid authorId, Guid courseId)
-    {
-        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId))
-        {
+    [HttpGet("{courseId}", Name = "GetCourseForAuthor")]
+    public async Task<ActionResult<CourseDto>> GetCourseForAuthor(Guid authorId, Guid courseId) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
             return NotFound();
         }
 
         var courseForAuthorFromRepo = await _courseLibraryRepository.GetCourseAsync(authorId, courseId);
 
-        if (courseForAuthorFromRepo == null)
-        {
+        if (courseForAuthorFromRepo == null) {
             return NotFound();
         }
         return Ok(_mapper.Map<CourseDto>(courseForAuthorFromRepo));
@@ -54,10 +47,8 @@ public class CoursesController : ControllerBase
 
     [HttpPost]
     public async Task<ActionResult<CourseDto>> CreateCourseForAuthor(
-            Guid authorId, CourseForCreationDto course)
-    {
-        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId))
-        {
+            Guid authorId, CourseForCreationDto course) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
             return NotFound();
         }
 
@@ -66,24 +57,21 @@ public class CoursesController : ControllerBase
         await _courseLibraryRepository.SaveAsync();
 
         var courseToReturn = _mapper.Map<CourseDto>(courseEntity);
-        return Ok(courseToReturn);
+        return CreatedAtRoute("GetCourseForAuthor", new { authorId, courseToReturn.Id }, courseToReturn);
     }
 
 
     [HttpPut("{courseId}")]
     public async Task<IActionResult> UpdateCourseForAuthor(Guid authorId,
       Guid courseId,
-      CourseDto course)
-    {
-        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId))
-        {
+      CourseDto course) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
             return NotFound();
         }
 
         var courseForAuthorFromRepo = await _courseLibraryRepository.GetCourseAsync(authorId, courseId);
 
-        if (courseForAuthorFromRepo == null)
-        {
+        if (courseForAuthorFromRepo == null) {
             return NotFound();
         }
 
@@ -96,17 +84,14 @@ public class CoursesController : ControllerBase
     }
 
     [HttpDelete("{courseId}")]
-    public async Task<ActionResult> DeleteCourseForAuthor(Guid authorId, Guid courseId)
-    {
-        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId))
-        {
+    public async Task<ActionResult> DeleteCourseForAuthor(Guid authorId, Guid courseId) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
             return NotFound();
         }
 
         var courseForAuthorFromRepo = await _courseLibraryRepository.GetCourseAsync(authorId, courseId);
 
-        if (courseForAuthorFromRepo == null)
-        {
+        if (courseForAuthorFromRepo == null) {
             return NotFound();
         }
 

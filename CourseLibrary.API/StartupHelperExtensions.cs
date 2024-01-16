@@ -4,18 +4,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CourseLibrary.API;
 
-internal static class StartupHelperExtensions
-{
+internal static class StartupHelperExtensions {
     // Add services to the container
-    public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
-    {
+    public static WebApplication ConfigureServices(this WebApplicationBuilder builder) {
         builder.Services.AddControllers();
 
-        builder.Services.AddScoped<ICourseLibraryRepository, 
+        builder.Services.AddScoped<ICourseLibraryRepository,
             CourseLibraryRepository>();
 
-        builder.Services.AddDbContext<CourseLibraryContext>(options =>
-        {
+        builder.Services.AddDbContext<CourseLibraryContext>(options => {
             options.UseSqlite(@"Data Source=library.db");
         });
 
@@ -26,38 +23,39 @@ internal static class StartupHelperExtensions
     }
 
     // Configure the request/response pipelien
-    public static WebApplication ConfigurePipeline(this WebApplication app)
-    { 
-        if (app.Environment.IsDevelopment())
-        {
+    public static WebApplication ConfigurePipeline(this WebApplication app) {
+        if (app.Environment.IsDevelopment()) {
             app.UseDeveloperExceptionPage();
         }
- 
+        else {
+            app.UseExceptionHandler(appBuilder => {
+                appBuilder.Run(async context => {
+                    context.Response.StatusCode = 500;
+                    await context.Response.WriteAsync("Something went wrong. Try again later.");
+                });
+            });
+        }
+
         app.UseAuthorization();
 
-        app.MapControllers(); 
-         
-        return app; 
+        app.MapControllers();
+
+        return app;
     }
 
-    public static async Task ResetDatabaseAsync(this WebApplication app)
-    {
-        using (var scope = app.Services.CreateScope())
-        {
-            try
-            {
+    public static async Task ResetDatabaseAsync(this WebApplication app) {
+        using (var scope = app.Services.CreateScope()) {
+            try {
                 var context = scope.ServiceProvider.GetService<CourseLibraryContext>();
-                if (context != null)
-                {
+                if (context != null) {
                     await context.Database.EnsureDeletedAsync();
                     await context.Database.MigrateAsync();
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
                 logger.LogError(ex, "An error occurred while migrating the database.");
             }
-        } 
+        }
     }
 }
