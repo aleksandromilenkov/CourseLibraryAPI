@@ -22,6 +22,7 @@ public class AuthorsController : ControllerBase {
     }
 
     [HttpGet]
+    [HttpHead]
     public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthors() {
         // get authors from repo
         var authorsFromRepo = await _courseLibraryRepository
@@ -45,7 +46,7 @@ public class AuthorsController : ControllerBase {
     }
 
     [HttpPost]
-    public async Task<ActionResult<AuthorDto>> CreateAuthor(AuthorDto author) {
+    public async Task<ActionResult<AuthorDto>> CreateAuthor(AuthorForCreationDto author) {
         var authorEntity = _mapper.Map<Entities.Author>(author);
 
         _courseLibraryRepository.AddAuthor(authorEntity);

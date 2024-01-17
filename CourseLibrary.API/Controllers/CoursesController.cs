@@ -57,7 +57,7 @@ public class CoursesController : ControllerBase {
         await _courseLibraryRepository.SaveAsync();
 
         var courseToReturn = _mapper.Map<CourseDto>(courseEntity);
-        return CreatedAtRoute("GetCourseForAuthor", new { authorId, courseToReturn.Id }, courseToReturn);
+        return CreatedAtRoute("GetCourseForAuthor", new { authorId = authorId, courseId = courseToReturn.Id }, courseToReturn);
     }
 
 
