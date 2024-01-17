@@ -7,7 +7,9 @@ namespace CourseLibrary.API;
 internal static class StartupHelperExtensions {
     // Add services to the container
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder) {
-        builder.Services.AddControllers();
+        builder.Services.AddControllers(options => {
+            options.ReturnHttpNotAcceptable = true;
+        }).AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
 
         builder.Services.AddScoped<ICourseLibraryRepository,
             CourseLibraryRepository>();
