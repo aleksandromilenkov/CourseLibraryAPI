@@ -2,6 +2,7 @@
 using AutoMapper;
 using CourseLibrary.API.Models;
 using CourseLibrary.API.Services;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CourseLibrary.API.Controllers;
@@ -80,6 +81,55 @@ public class CoursesController : ControllerBase {
         _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
 
         await _courseLibraryRepository.SaveAsync();
+        return NoContent();
+    }
+
+    [HttpPatch("{courseId}")]
+    public async Task<IActionResult> PartiallyUpdateCourseForAuthor(
+      Guid authorId,
+      Guid courseId,
+      JsonPatchDocument<CourseForUpdateDto> patchDocument) {
+        if (!await _courseLibraryRepository.AuthorExistsAsync(authorId)) {
+            return NotFound();
+        }
+
+        var courseForAuthorFromRepo = await _courseLibraryRepository
+            .GetCourseAsync(authorId, courseId);
+
+        if (courseForAuthorFromRepo == null) {
+            var courseDto = new CourseForUpdateDto();
+            patchDocument.ApplyTo(courseDto, ModelState);
+
+            if (!TryValidateModel(courseDto)) {
+                return ValidationProblem(ModelState);
+            }
+
+            var courseToAdd = _mapper.Map<Entities.Course>(courseDto);
+            courseToAdd.Id = courseId;
+
+            _courseLibraryRepository.AddCourse(authorId, courseToAdd);
+            await _courseLibraryRepository.SaveAsync();
+
+            var courseToReturn = _mapper.Map<CourseDto>(courseToAdd);
+            return CreatedAtRoute("GetCourseForAuthor",
+                new { authorId, courseId = courseToReturn.Id },
+                courseToReturn);
+        }
+
+        var courseToPatch = _mapper.Map<CourseForUpdateDto>(
+            courseForAuthorFromRepo);
+        patchDocument.ApplyTo(courseToPatch, ModelState);
+
+        if (!TryValidateModel(courseToPatch)) {
+            return ValidationProblem(ModelState);
+        }
+
+        _mapper.Map(courseToPatch, courseForAuthorFromRepo);
+
+        _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
+
+        await _courseLibraryRepository.SaveAsync();
+
         return NoContent();
     }
 
