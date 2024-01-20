@@ -1,5 +1,7 @@
 ﻿using CourseLibrary.API.DbContexts;
 using CourseLibrary.API.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Serialization;
 
@@ -13,7 +15,37 @@ internal static class StartupHelperExtensions {
         }).AddNewtonsoftJson().AddNewtonsoftJson(setupAction => {
             setupAction.SerializerSettings.ContractResolver =
                 new CamelCasePropertyNamesContractResolver();
-        }).AddXmlDataContractSerializerFormatters();
+        }).AddXmlDataContractSerializerFormatters().ConfigureApiBehaviorOptions(setupAction => {
+            setupAction.InvalidModelStateResponseFactory = context => {
+                // create a validation problem details object
+                var problemDetailsFactory = context.HttpContext.RequestServices
+                    .GetRequiredService<ProblemDetailsFactory>();
+
+                var validationProblemDetails = problemDetailsFactory
+                    .CreateValidationProblemDetails(
+                        context.HttpContext,
+                        context.ModelState);
+
+                // add additional info not added by default
+                validationProblemDetails.Detail =
+                    "See the errors field for details.";
+                validationProblemDetails.Instance =
+                    context.HttpContext.Request.Path;
+
+                // report invalid model state responses as validation issues
+                validationProblemDetails.Type =
+                    "https://courselibrary.com/modelvalidationproblem";
+                validationProblemDetails.Status =
+                    StatusCodes.Status422UnprocessableEntity;
+                validationProblemDetails.Title =
+                    "One or more validation errors occurred.";
+
+                return new UnprocessableEntityObjectResult(
+                    validationProblemDetails) {
+                    ContentTypes = { "application/problem+json" }
+                };
+            };
+        });
 
         builder.Services.AddScoped<ICourseLibraryRepository,
             CourseLibraryRepository>();
