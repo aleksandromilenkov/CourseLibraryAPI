@@ -58,4 +58,10 @@ public class AuthorsController : ControllerBase {
             new { authorId = authorToReturn.Id },
             authorToReturn);
     }
+
+    [HttpOptions()]
+    public ActionResult GetAuthorsOptions() {
+        Response.Headers.Add("Allow", "GET, HEAD, POST, OPTIONS");
+        return Ok();
+    }
 }
