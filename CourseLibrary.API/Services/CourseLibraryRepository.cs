@@ -1,5 +1,6 @@
 ﻿using CourseLibrary.API.DbContexts;
 using CourseLibrary.API.Entities;
+using CourseLibrary.API.Helpers;
 using CourseLibrary.API.ResourceParameters;
 using Microsoft.EntityFrameworkCore;
 
@@ -106,7 +107,7 @@ public class CourseLibraryRepository : ICourseLibraryRepository {
         return await _context.Authors.ToListAsync();
     }
 
-    public async Task<IEnumerable<Author>> GetAuthorsAsync(AuthorsResourceParameters authorsResourceParameters) {
+    public async Task<PagedList<Author>> GetAuthorsAsync(AuthorsResourceParameters authorsResourceParameters) {
         if (authorsResourceParameters == null) {
             throw new ArgumentException(nameof(authorsResourceParameters));
         }
@@ -118,9 +119,9 @@ public class CourseLibraryRepository : ICourseLibraryRepository {
             authorsResourceParameters.SearchQuery = authorsResourceParameters.SearchQuery.Trim();
             authorCollection = authorCollection.Where(a => a.FirstName.Contains(authorsResourceParameters.SearchQuery) || a.LastName.Contains(authorsResourceParameters.SearchQuery) || a.MainCategory.Contains(authorsResourceParameters.SearchQuery));
         }
-        var skipNumber = (authorsResourceParameters.PageNumber - 1) * authorsResourceParameters.PageSize;
-
-        return await authorCollection.Skip(skipNumber).Take(authorsResourceParameters.PageSize).ToListAsync();
+        return await PagedList<Author>.CreateAsync(authorCollection,
+              authorsResourceParameters.PageNumber,
+              authorsResourceParameters.PageSize);
     }
 
     public async Task<IEnumerable<Author>> GetAuthorsAsync(IEnumerable<Guid> authorIds) {
