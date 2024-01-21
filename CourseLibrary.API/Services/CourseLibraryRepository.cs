@@ -110,9 +110,6 @@ public class CourseLibraryRepository : ICourseLibraryRepository {
         if (authorsResourceParameters == null) {
             throw new ArgumentException(nameof(authorsResourceParameters));
         }
-        if (string.IsNullOrWhiteSpace(authorsResourceParameters.MainCategory) && string.IsNullOrWhiteSpace(authorsResourceParameters.SearchQuery)) {
-            return await GetAuthorsAsync();
-        }
         var authorCollection = _context.Authors.AsQueryable();
         if (!string.IsNullOrWhiteSpace(authorsResourceParameters.MainCategory)) {
             authorCollection = authorCollection.Where(a => a.MainCategory == authorsResourceParameters.MainCategory.Trim());
@@ -121,7 +118,9 @@ public class CourseLibraryRepository : ICourseLibraryRepository {
             authorsResourceParameters.SearchQuery = authorsResourceParameters.SearchQuery.Trim();
             authorCollection = authorCollection.Where(a => a.FirstName.Contains(authorsResourceParameters.SearchQuery) || a.LastName.Contains(authorsResourceParameters.SearchQuery) || a.MainCategory.Contains(authorsResourceParameters.SearchQuery));
         }
-        return await authorCollection.ToListAsync();
+        var skipNumber = (authorsResourceParameters.PageNumber - 1) * authorsResourceParameters.PageSize;
+
+        return await authorCollection.Skip(skipNumber).Take(authorsResourceParameters.PageSize).ToListAsync();
     }
 
     public async Task<IEnumerable<Author>> GetAuthorsAsync(IEnumerable<Guid> authorIds) {
