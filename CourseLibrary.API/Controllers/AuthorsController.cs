@@ -35,6 +35,7 @@ public class AuthorsController : ControllerBase {
     [HttpGet(Name = "GetAuthors")]
     [HttpHead]
     public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthors([FromQuery] AuthorsResourceParameters authorsResourceParameters) {
+
         if (!_propertyMappingService
            .ValidMappingExistsFor<AuthorDto, Entities.Author>(
                authorsResourceParameters.OrderBy)) {
