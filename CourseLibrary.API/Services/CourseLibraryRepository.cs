@@ -119,6 +119,11 @@ public class CourseLibraryRepository : ICourseLibraryRepository {
             authorsResourceParameters.SearchQuery = authorsResourceParameters.SearchQuery.Trim();
             authorCollection = authorCollection.Where(a => a.FirstName.Contains(authorsResourceParameters.SearchQuery) || a.LastName.Contains(authorsResourceParameters.SearchQuery) || a.MainCategory.Contains(authorsResourceParameters.SearchQuery));
         }
+        if (!string.IsNullOrWhiteSpace(authorsResourceParameters.OrderBy)) {
+            if (authorsResourceParameters.OrderBy.ToLowerInvariant() == "name") {
+                authorCollection = authorCollection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+            }
+        }
         return await PagedList<Author>.CreateAsync(authorCollection,
               authorsResourceParameters.PageNumber,
               authorsResourceParameters.PageSize);
