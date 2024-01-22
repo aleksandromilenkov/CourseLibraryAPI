@@ -5,6 +5,7 @@ using CourseLibrary.API.Models;
 using CourseLibrary.API.ResourceParameters;
 using CourseLibrary.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.Text.Json;
 
 namespace CourseLibrary.API.Controllers;
@@ -14,19 +15,31 @@ namespace CourseLibrary.API.Controllers;
 public class AuthorsController : ControllerBase {
     private readonly ICourseLibraryRepository _courseLibraryRepository;
     private readonly IMapper _mapper;
+    private readonly IPropertyMappingService _propertyMappingService;
+    private readonly ProblemDetailsFactory _problemDetailsFactory;
 
-    public AuthorsController(
-        ICourseLibraryRepository courseLibraryRepository,
-        IMapper mapper) {
+    public AuthorsController(ICourseLibraryRepository courseLibraryRepository,
+        IMapper mapper, IPropertyMappingService propertyMappingService,
+        ProblemDetailsFactory problemDetailsFactory) {
         _courseLibraryRepository = courseLibraryRepository ??
             throw new ArgumentNullException(nameof(courseLibraryRepository));
         _mapper = mapper ??
             throw new ArgumentNullException(nameof(mapper));
+        _propertyMappingService = propertyMappingService ??
+            throw new ArgumentNullException(nameof(propertyMappingService));
+        _problemDetailsFactory = problemDetailsFactory ??
+            throw new ArgumentNullException(nameof(problemDetailsFactory));
     }
+
 
     [HttpGet(Name = "GetAuthors")]
     [HttpHead]
     public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthors([FromQuery] AuthorsResourceParameters authorsResourceParameters) {
+        if (!_propertyMappingService
+           .ValidMappingExistsFor<AuthorDto, Entities.Author>(
+               authorsResourceParameters.OrderBy)) {
+            return BadRequest();
+        }
         // get authors from repo
         var authorsFromRepo = await _courseLibraryRepository
             .GetAuthorsAsync(authorsResourceParameters);
@@ -56,6 +69,7 @@ public class AuthorsController : ControllerBase {
             case ResourceUriType.PreviousPage:
                 return Url.Link("GetAuthors",
                     new {
+                        orderBy = authorsResourceParameters.OrderBy,
                         pageNumber = authorsResourceParameters.PageNumber - 1,
                         pageSize = authorsResourceParameters.PageSize,
                         mainCategory = authorsResourceParameters.MainCategory,
@@ -64,6 +78,7 @@ public class AuthorsController : ControllerBase {
             case ResourceUriType.NextPage:
                 return Url.Link("GetAuthors",
                     new {
+                        orderBy = authorsResourceParameters.OrderBy,
                         pageNumber = authorsResourceParameters.PageNumber + 1,
                         pageSize = authorsResourceParameters.PageSize,
                         mainCategory = authorsResourceParameters.MainCategory,
@@ -72,6 +87,7 @@ public class AuthorsController : ControllerBase {
             default:
                 return Url.Link("GetAuthors",
                     new {
+                        orderBy = authorsResourceParameters.OrderBy,
                         pageNumber = authorsResourceParameters.PageNumber,
                         pageSize = authorsResourceParameters.PageSize,
                         mainCategory = authorsResourceParameters.MainCategory,
