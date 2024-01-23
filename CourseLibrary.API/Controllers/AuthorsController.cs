@@ -34,7 +34,7 @@ public class AuthorsController : ControllerBase {
 
     [HttpGet(Name = "GetAuthors")]
     [HttpHead]
-    public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAuthors([FromQuery] AuthorsResourceParameters authorsResourceParameters) {
+    public async Task<IActionResult> GetAuthors([FromQuery] AuthorsResourceParameters authorsResourceParameters) {
 
         if (!_propertyMappingService
            .ValidMappingExistsFor<AuthorDto, Entities.Author>(
@@ -61,7 +61,7 @@ public class AuthorsController : ControllerBase {
 
 
         // return them
-        return Ok(_mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo));
+        return Ok(_mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo).ShapeData(authorsResourceParameters.Fields));
     }
 
     private string? CreateAuthorsResourceUri(
@@ -70,6 +70,7 @@ public class AuthorsController : ControllerBase {
             case ResourceUriType.PreviousPage:
                 return Url.Link("GetAuthors",
                     new {
+                        fields = authorsResourceParameters.Fields,
                         orderBy = authorsResourceParameters.OrderBy,
                         pageNumber = authorsResourceParameters.PageNumber - 1,
                         pageSize = authorsResourceParameters.PageSize,
@@ -79,6 +80,7 @@ public class AuthorsController : ControllerBase {
             case ResourceUriType.NextPage:
                 return Url.Link("GetAuthors",
                     new {
+                        fields = authorsResourceParameters.Fields,
                         orderBy = authorsResourceParameters.OrderBy,
                         pageNumber = authorsResourceParameters.PageNumber + 1,
                         pageSize = authorsResourceParameters.PageSize,
